@@ -19,7 +19,7 @@ def highscore_xor(keyspace, ciphertext):
         # skip if there are any unprintable characters
         if any(c in unprintable for c in decipher):
             continue
-        count = Counter(decipher)
+        count = Counter(decipher.lower())
         score = sum(count[k] for k in most_common)
         if score > highscore:
             highscore = score
@@ -30,7 +30,8 @@ def highscore_xor(keyspace, ciphertext):
     except NameError:
         return None
 
-ciphertext = unhexlify(b'1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
-key = highscore_xor(set(printable.encode()), ciphertext)
-print(chr(key))
-print(strxor_c(ciphertext, key))
+if __name__=='__main__':
+    ciphertext = unhexlify(b'1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736')
+    key = highscore_xor(set(printable.encode()), ciphertext)
+    print(chr(key))
+    print(strxor_c(ciphertext, key))
