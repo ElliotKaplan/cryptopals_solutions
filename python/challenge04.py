@@ -4,10 +4,9 @@ from string import ascii_letters, printable
 
 from Crypto.Util.strxor import strxor_c
 
-from challenge03 import highscore_xor
+from utilities import highscore_xor, most_common
 
 keyspace = set(range(1, 0x100))
-most_common = set(b'etaoin shrdlu')
 
 high_score = 0
 with open('../input_files/4.txt') as fobj:
