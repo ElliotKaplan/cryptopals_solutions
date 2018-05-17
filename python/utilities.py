@@ -145,3 +145,24 @@ def cbc_encrypt(plaintext, key, initial_vec=None, return_iter=False):
     if return_iter:
         return encryption()
     return b''.join(encryption())
+
+def cbc_validate(*args):
+    plaintext = cbc_decrypt(*args)
+    try:
+        return is_pkcs_7(plaintext)
+    except:
+        return False
+
+def ctr_cipher(text_in, key, nonce):
+    crypto = AES.new(key, AES.MODE_ECB)
+    bsize = crypto.block_size
+    # generator of cipher keys
+    def keystream(nblocks):
+        for i in range(nblocks):
+            raw = struct.pack('<QQ', nonce, i)
+            yield crypto.encrypt(raw)
+    nblocks = (len(text_in) // bsize) + 1
+    ks = b''.join(keystream(nblocks))
+    return strxor(text_in, ks[:len(text_in)])
+    
+    
