@@ -1,11 +1,16 @@
 from string import printable
 from collections import Counter
+import struct
 
 import numpy as np
+from Crypto.Cipher import AES
 from Crypto.Util.strxor import strxor, strxor_c
 
 most_common = set(b'etaoin shrdlu')
 unprintable = set(range(0x100)).difference(set(printable.encode()))
+
+def randomkey(size=16):
+    return np.uint8(np.random.randint(0x100, size=size)).tostring()
 
 def highscore_xor(keyspace, ciphertext):
     # returns the key with the highest number of characters in the most_common
@@ -54,3 +59,67 @@ def hamming_distance(string1, string2):
                for i in np.power(2, np.arange(8)))
     return dist
         
+def pkcs_7(string_in, blocksize=16):
+    padlen = blocksize - len(string_in) % blocksize
+    return string_in + (np.zeros(padlen, np.uint8)+padlen).tostring()
+
+def to_blocks(text, blocksize):
+    # splits a character array into individual blocks. returns an iterator over blocks
+    c_arr = np.fromstring(text, np.uint8).reshape(-1, blocksize)
+    yield from (c.tostring() for c in c_arr)
+
+def ecb_decrypt(ciphertext, key, initial_vec=None, return_iter=False):
+    # decrypt using AES-128-ECB. returns a generator of plaintext blocks
+    crypto = AES.new(key, AES.MODE_ECB)
+    bsize = crypto.block_size
+    ciphertext = pkcs_7(ciphertext, bsize)
+    decryption = map(crypto.decrypt, to_blocks(ciphertext, bsize))
+    if return_iter:
+        return decryption
+    return b''.join(decryption)
+
+def ecb_encrypt(plaintext, key, initial_vec=None, return_iter=False):
+    # encrypt using AES-128-ECB. Returns an generator of ciphertext blocks
+    crypto = AES.new(key, AES.MODE_ECB)
+    bsize = crypto.block_size
+    plaintext = pkcs_7(plaintext, bsize)
+    encryption = map(crypto.encrypt, to_blocks(plaintext, bsize))
+    if return_iter:
+        return encryption
+    return b''.join(encryption)
+
+def cbc_decrypt(ciphertext, key, initial_vec=None, return_iter=False):
+    # decrypt using AES-128-CBC. returns a generator of plaintext blocks
+    crypto = AES.new(key, AES.MODE_ECB)
+    bsize = crypto.block_size
+    if initial_vec is None:
+        initial_vec = np.zeros(bsize, np.uint8).tostring()
+    ciphertext = pkcs_7(ciphertext)
+    # iterator for decrypted text
+    def decryption():
+        xor_vec = initial_vec
+        for block in to_blocks(ciphertext, bsize):
+            plain = strxor(xor_vec, crypto.decrypt(block))
+            xor_vec = block
+            yield plain
+    if return_iter:
+        return decryption()
+    return b''.join(decryption())
+
+def cbc_encrypt(plaintext, key, initial_vec=None, return_iter=False):
+    # decrypt using AES-128-CBC. returns a generator of plaintext blocks
+    crypto = AES.new(key, AES.MODE_ECB)
+    bsize = crypto.block_size
+    if initial_vec is None:
+        initial_vec = np.zeros(bsize, np.uint8).tostring()
+    plaintext = pkcs_7(plaintext)
+    # iterator for encrypted text
+    def encryption():
+        xor_vec = initial_vec
+        for block in to_blocks(plaintext, bsize):
+            cipher = crypto.encrypt(strxor(xor_vec, block))
+            xor_vec = cipher
+            yield cipher
+    if return_iter:
+        return encryption()
+    return b''.join(encryption())
