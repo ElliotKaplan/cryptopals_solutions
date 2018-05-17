@@ -60,8 +60,17 @@ def hamming_distance(string1, string2):
     return dist
         
 def pkcs_7(string_in, blocksize=16):
-    padlen = blocksize - len(string_in) % blocksize
+    padlen = blocksize - (len(string_in) % blocksize)
+    if padlen == blocksize:
+        return string_in
     return string_in + (np.zeros(padlen, np.uint8)+padlen).tostring()
+
+def is_pkcs_7(string_in, blocksize=16):
+    padlen = string_in[-1]
+    if any(c != padlen for c in string_in[-padlen:]):
+        raise ValueError("Invalid pkcs_7")
+    return True
+
 
 def to_blocks(text, blocksize):
     # splits a character array into individual blocks. returns an iterator over blocks
