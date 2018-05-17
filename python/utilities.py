@@ -58,14 +58,27 @@ def hamming_distance(string1, string2):
     dist = sum(((xorarr & i) // i).sum()
                for i in np.power(2, np.arange(8)))
     return dist
-        
+
+def get_blocksize(encryption):
+    # calculate the block size
+    testtext = b''
+    len1 = len(encryption(testtext))
+    len2 = len1
+    while len2 == len1:
+        testtext += b'a'
+        len2 = len(encryption(testtext))
+    blocksize = len2 - len1
+    return blocksize, len1 // blocksize
+
 def pkcs_7(string_in, blocksize=16):
+    # pad a string to valid pkcs_7
     padlen = blocksize - (len(string_in) % blocksize)
     if padlen == blocksize:
         return string_in
     return string_in + (np.zeros(padlen, np.uint8)+padlen).tostring()
 
 def is_pkcs_7(string_in, blocksize=16):
+    # confirm that a string is properly padded
     padlen = string_in[-1]
     if any(c != padlen for c in string_in[-padlen:]):
         raise ValueError("Invalid pkcs_7")
