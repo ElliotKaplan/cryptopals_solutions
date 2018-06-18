@@ -9,6 +9,12 @@ from Crypto.Util.strxor import strxor, strxor_c
 most_common = set(b'etaoin shrdlu')
 unprintable = set(range(0x100)).difference(set(printable.encode()))
 
+def u32_bool(num):
+    return np.fromiter(((num & 2**i) // 2**i
+                        for i in range(31, -1, -1)), np.bool)
+def bool_u32(boolarr):
+    return (boolarr * np.power(2, np.arange(31, -1, -1))).sum()
+
 def randomkey(size=16):
     return np.uint8(np.random.randint(0x100, size=size)).tostring()
 
